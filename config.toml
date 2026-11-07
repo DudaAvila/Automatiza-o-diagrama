@@ -1,0 +1,89 @@
+# Configuração do sync_miro_er.py
+# Copie para config.toml e ajuste. Este arquivo NÃO tem senha nem token:
+# a conexão do banco vai em PG_DSN e o token do Miro em MIRO_TOKEN.
+
+# Link do board ou só o ID (o trecho depois de /app/board/ na URL)
+board_id = "https://miro.com/app/board/COLE_AQUI_O_ID=/"
+
+# Onde o script guarda o "mapa" tabela -> item no Miro. Não apague:
+# é por ele que o script sabe o que já desenhou.
+arquivo_estado = "estado_miro.json"
+
+# Incluir views e materialized views como caixas (marcadas "(view)").
+# Views não têm FK; só ganham ligação manual ou inferida.
+incluir_views = false
+
+# Liga colunas com o mesmo nome da PK simples de outra tabela
+# (ex.: ccih.x.id_hospital -> tratamento.hospital.id_hospital).
+# Aparecem TRACEJADAS no Miro. Rode com --dry-run para revisar antes.
+inferir_relacoes = false
+
+# Um frame colorido por schema. "cor" e "titulo" são opcionais.
+[[schemas]]
+nome = "ccih"
+titulo = "CCIH"
+cor = "#FFF3E0"
+
+[[schemas]]
+nome = "ministerio"
+titulo = "Ministério"
+cor = "#F3E5F5"
+
+# Ligações que NÃO existem como FK no banco (use a documentação antiga
+# como base). Linha contínua no Miro. Repita o bloco para cada ligação.
+# "colunas_destino" é opcional quando o nome é igual nos dois lados.
+#
+# [[relacoes]]
+# origem = "ccih.nome_da_tabela"
+# colunas = ["id_hospital"]
+# destino = "tratamento.hospital"
+# colunas_destino = ["id_hospital"]
+
+# Ajustes finos de aparência (todos opcionais)
+[layout]
+fonte = 14                    # tamanho da letra nas caixas
+altura_linha = 22             # aumente se o texto estiver vazando da caixa
+colunas_por_frame = 4         # quantas colunas de caixas por frame no 1º desenho
+espaco = 60                   # distância entre caixas
+margem = 50                   # distância das caixas até a borda do frame
+largura_min = 240
+largura_max = 520
+
+
+# --- Paciente (REDCap) ---
+[[relacoes]]
+origem = "ccih.redcap_iras"
+colunas = ["record_id"]
+destino = "ccih.redcap_informacoes_paciente"
+
+[[relacoes]]
+origem = "ccih.redcap_uso_dispositivos"
+colunas = ["record_id"]
+destino = "ccih.redcap_informacoes_paciente"
+
+# --- Hospital (grupo de acesso do REDCap) — CONFIRMAR destino ---
+[[relacoes]]
+origem = "ccih.redcap_informacoes_paciente"
+colunas = ["redcap_data_access_group"]
+destino = "ccih.ccih_hospitais_codigo"
+
+[[relacoes]]
+origem = "ccih.redcap_iras"
+colunas = ["redcap_data_access_group"]
+destino = "ccih.ccih_hospitais_codigo"
+
+[[relacoes]]
+origem = "ccih.redcap_uso_dispositivos"
+colunas = ["redcap_data_access_group"]
+destino = "ccih.ccih_hospitais_codigo"
+
+# --- Tabelas de-para — CONFIRMAR ---
+[[relacoes]]
+origem = "ccih.de_para_hospitais_codigo"
+colunas = ["codigo"]
+destino = "ccih.ccih_hospitais_codigo"
+
+[[relacoes]]
+origem = "ccih.de_para_micro_iras"
+colunas = ["micro"]
+destino = "ccih.de_para_micro_index"
